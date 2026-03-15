@@ -21,6 +21,7 @@ Nginxアクセスログをリアルタイムで監視するセキュリティダ
 - **Multi-language** / **多言語対応** - Japanese, English, Chinese, Spanish, Korean
 - **Alert Descriptions** / **アラート説明** - Each alert includes threat explanation and recommended countermeasures in all languages
 - **Configurable Services** / **サービス設定** - Define your own services via `config.json` for path-based routing
+- **Reverse Proxy Ready** / **リバースプロキシ対応** - Auto-detects base path when served behind Nginx (e.g., `/monitor/`)
 
 ---
 
@@ -68,7 +69,13 @@ Edit `config.json` to match your environment:
 | `server.port` | Dashboard server port / ダッシュボードのポート番号 |
 | `server.logFile` | Path to Nginx access log / Nginxアクセスログのパス |
 
-### 3. Set Credentials / 認証設定
+### 3. Create Data Directory / データディレクトリ作成
+
+```bash
+mkdir -p data
+```
+
+### 4. Set Credentials / 認証設定
 
 ```bash
 # Required environment variables
@@ -77,7 +84,7 @@ export MONITOR_USER=admin
 export MONITOR_PASS=your_secure_password_here
 ```
 
-### 4. Run / 起動
+### 5. Run / 起動
 
 ```bash
 # Direct
@@ -88,7 +95,7 @@ MONITOR_USER=admin MONITOR_PASS=secret pm2 start ecosystem.config.js
 pm2 save
 ```
 
-### 5. Access / アクセス
+### 6. Access / アクセス
 
 Open in browser / ブラウザで開く: `http://localhost:4000`
 
@@ -121,6 +128,13 @@ location /monitor/ {
     proxy_read_timeout 86400s;  # Long timeout for SSE / SSEの長時間接続用
 }
 ```
+
+The dashboard automatically detects the base path (e.g., `/monitor/`) and adjusts all API calls accordingly. No additional configuration is needed.
+
+ダッシュボードはベースパス（例: `/monitor/`）を自動検出し、全APIコールを自動調整します。追加設定は不要です。
+
+**Note / 注意**: If you access the dashboard from an external IP, add your server's public IP to the `allow` list.
+外部IPからアクセスする場合、サーバーのパブリックIPを `allow` リストに追加してください。
 
 Then test and reload:
 設定をテストしてリロード:
@@ -254,6 +268,10 @@ All endpoints require Basic Auth except `/api/health`.
   `config.json` はgitignoreに含まれ、サービス設定の漏洩を防ぎます。
 - The `/api/health` endpoint is the only one accessible without authentication.
   `/api/health` は認証なしでアクセスできる唯一のエンドポイントです。
+- All query parameters are validated with whitelists to prevent XSS reflection.
+  全てのクエリパラメータはホワイトリストで検証され、XSSリフレクションを防止します。
+- The application requires `MONITOR_USER` and `MONITOR_PASS` to be set; it will not start with default credentials.
+  アプリは `MONITOR_USER` と `MONITOR_PASS` の設定を必須とし、デフォルト認証情報では起動しません。
 
 ---
 
