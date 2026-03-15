@@ -621,10 +621,8 @@ body {
   font-weight: 600;
 }
 
-.svc-badge.svc-ultrathink { background: rgba(59,130,246,0.15);  color: var(--svc-ultrathink); }
-.svc-badge.svc-converter  { background: rgba(139,92,246,0.15);  color: var(--svc-converter);  }
-.svc-badge.svc-limai      { background: rgba(6,182,212,0.15);   color: var(--svc-limai);      }
-.svc-badge.svc-optimizer  { background: rgba(249,115,22,0.15);  color: var(--svc-optimizer);  }
+/* Service colors are dynamically injected from config via API */
+.svc-badge { background: rgba(100,116,139,0.15); color: var(--text-secondary); }
 
 /* ---- Toast Notifications ---- */
 #toast-container {

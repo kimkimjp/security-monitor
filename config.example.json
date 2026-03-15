@@ -1,0 +1,12 @@
+{
+  "services": [
+    { "name": "main-app", "prefix": "/", "color": "#3b82f6" },
+    { "name": "api", "prefix": "/api/", "color": "#8b5cf6" },
+    { "name": "admin", "prefix": "/admin/", "color": "#06b6d4" }
+  ],
+  "defaultService": "main-app",
+  "server": {
+    "port": 4000,
+    "logFile": "/var/log/nginx/access.log"
+  }
+}

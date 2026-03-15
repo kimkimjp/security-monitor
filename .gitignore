@@ -2,5 +2,6 @@ node_modules/
 data/
 *.log
 .env
+config.json
 nginx-monitor.conf
 nginx-ultrathink.bak

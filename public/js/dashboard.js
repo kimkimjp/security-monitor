@@ -58,13 +58,15 @@
     return 's5xx';
   }
 
+  // Service config loaded from API
+  const serviceColors = {};
+
   function serviceClass(svc) {
-    const s = (svc || '').toLowerCase();
-    if (s.includes('ultrathink')) return 'svc-ultrathink';
-    if (s.includes('convert'))   return 'svc-converter';
-    if (s.includes('limai'))     return 'svc-limai';
-    if (s.includes('optim'))     return 'svc-optimizer';
-    return '';
+    return (svc || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
+  }
+
+  function getServiceColor(svc) {
+    return serviceColors[(svc || '').toLowerCase()] || '#64748b';
   }
 
   function shortTime(dateStr) {
@@ -885,6 +887,32 @@
 
   // ---- Initial Data Load ----
 
+  function loadServiceConfig() {
+    return fetch('/api/config/services')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (cfg) {
+        if (!cfg || !cfg.services) return;
+        var select = document.getElementById('filter-service');
+        cfg.services.forEach(function (svc) {
+          serviceColors[svc.name.toLowerCase()] = svc.color || '#64748b';
+          var opt = document.createElement('option');
+          opt.value = svc.name;
+          opt.textContent = svc.name;
+          select.appendChild(opt);
+        });
+        // Inject dynamic CSS for service badges
+        var style = document.createElement('style');
+        var css = '';
+        cfg.services.forEach(function (svc) {
+          var cls = svc.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+          css += '.svc-badge.' + cls + ' { background: ' + (svc.color || '#64748b') + '22; color: ' + (svc.color || '#64748b') + '; }\n';
+        });
+        style.textContent = css;
+        document.head.appendChild(style);
+      })
+      .catch(function () {});
+  }
+
   function loadInitialData() {
     const fetches = [
       fetch('/api/summary').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
@@ -1012,7 +1040,9 @@
     if (window.i18n) window.i18n.applyTranslations();
     setupFilters();
     initWorldMap();
-    loadInitialData();
+    loadServiceConfig().then(function () {
+      loadInitialData();
+    });
     connectSSE();
     requestNotificationPermission();
   }

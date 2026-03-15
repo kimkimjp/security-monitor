@@ -5,6 +5,19 @@ const path = require('path');
 const geo  = require('./geo-lookup');
 
 // ---------------------------------------------------------------------------
+// Load config (services)
+// ---------------------------------------------------------------------------
+let _config = { services: [], defaultService: 'default' };
+try {
+  const cfgPath = path.join(__dirname, '..', 'config.json');
+  if (fs.existsSync(cfgPath)) {
+    _config = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+  }
+} catch (e) {
+  console.warn('[Store] Could not load config.json, using defaults');
+}
+
+// ---------------------------------------------------------------------------
 // Ring Buffer
 // ---------------------------------------------------------------------------
 class RingBuffer {
@@ -45,11 +58,21 @@ class RingBuffer {
 // Service detection helper
 // ---------------------------------------------------------------------------
 function detectService(urlPath) {
-  if (!urlPath) return 'ultrathink-app';
-  if (urlPath.startsWith('/convert/') || urlPath === '/convert') return 'xls-converter';
-  if (urlPath.startsWith('/limai/') || urlPath === '/limai')     return 'limai-academy';
-  if (urlPath.startsWith('/optimize/') || urlPath === '/optimize') return 'file-optimizer';
-  return 'ultrathink-app';
+  if (!urlPath) return _config.defaultService || 'default';
+  // Match against configured services (longest prefix first, skip '/')
+  const sorted = (_config.services || [])
+    .filter(s => s.prefix && s.prefix !== '/')
+    .sort((a, b) => b.prefix.length - a.prefix.length);
+  for (const svc of sorted) {
+    if (urlPath.startsWith(svc.prefix) || urlPath === svc.prefix.replace(/\/$/, '')) {
+      return svc.name;
+    }
+  }
+  return _config.defaultService || 'default';
+}
+
+function getServiceConfig() {
+  return _config;
 }
 
 // ---------------------------------------------------------------------------
@@ -396,4 +419,4 @@ class StatsStore {
   }
 }
 
-module.exports = { RingBuffer, StatsStore, detectService };
+module.exports = { RingBuffer, StatsStore, detectService, getServiceConfig };

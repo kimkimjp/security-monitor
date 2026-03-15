@@ -5,7 +5,7 @@ const helmet          = require('helmet');
 const path            = require('path');
 const { parseLine }   = require('./log-parser');
 const DetectionEngine = require('./detection-engine');
-const { StatsStore, detectService } = require('./store');
+const { StatsStore, detectService, getServiceConfig } = require('./store');
 const LogWatcher      = require('./log-watcher');
 
 // ---------------------------------------------------------------------------
@@ -127,6 +127,11 @@ app.get('/api/countries', (_req, res) => {
     lat: c.ll?.[0] || 0,
     lng: c.ll?.[1] || 0,
   })));
+});
+
+app.get('/api/config/services', (_req, res) => {
+  const cfg = getServiceConfig();
+  res.json({ services: cfg.services || [], defaultService: cfg.defaultService || 'default' });
 });
 
 app.get('/api/health', (_req, res) => {
