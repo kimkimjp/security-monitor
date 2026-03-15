@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Monitor</title>
+  <link rel="stylesheet" href="css/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="header-left">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <h1 data-i18n="app.title">セキュリティモニター</h1>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="lang-selector">
+        <select id="lang-select" class="lang-select" title="Language"></select>
+      </div>
+      <div class="connection-status" id="connection-status">
+        <span class="status-dot" id="status-dot"></span>
+        <span class="status-text" id="status-text" data-i18n="status.connecting">接続中...</span>
+      </div>
+      <div class="header-clock" id="header-clock">--:--:--</div>
+    </div>
+  </header>
+
+  <main id="dashboard">
+
+    <section id="kpi-cards">
+      <div class="kpi-card" data-kpi="totalRequests">
+        <div class="kpi-label"><span data-i18n="kpi.totalRequests">総リクエスト数</span> <span class="kpi-sublabel" data-i18n="kpi.period">(1時間)</span></div>
+        <div class="kpi-value" id="kpi-total-requests">0</div>
+        <div class="kpi-trend" id="kpi-total-requests-trend"></div>
+      </div>
+      <div class="kpi-card" data-kpi="errors4xx">
+        <div class="kpi-label" data-i18n="kpi.errors4xx">4xx エラー</div>
+        <div class="kpi-value kpi-warning" id="kpi-4xx">0</div>
+        <div class="kpi-trend" id="kpi-4xx-trend"></div>
+      </div>
+      <div class="kpi-card" data-kpi="errors5xx">
+        <div class="kpi-label" data-i18n="kpi.errors5xx">5xx エラー</div>
+        <div class="kpi-value kpi-danger" id="kpi-5xx">0</div>
+        <div class="kpi-trend" id="kpi-5xx-trend"></div>
+      </div>
+      <div class="kpi-card" data-kpi="uniqueIps">
+        <div class="kpi-label" data-i18n="kpi.uniqueIps">ユニークIP数</div>
+        <div class="kpi-value" id="kpi-unique-ips">0</div>
+        <div class="kpi-trend" id="kpi-unique-ips-trend"></div>
+      </div>
+    </section>
+
+    <section id="charts-grid">
+      <div class="chart-panel" id="timeline-panel">
+        <div class="panel-header">
+          <h2 data-i18n="chart.timeline">リクエスト推移</h2>
+          <span class="panel-badge" data-i18n="chart.timelineInterval">1分間隔</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="timeline-chart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-panel" id="worldmap-panel">
+        <div class="panel-header">
+          <h2 data-i18n="chart.worldmap">グローバルアクセスマップ</h2>
+          <span class="panel-badge live-badge" data-i18n="chart.live">ライブ</span>
+        </div>
+        <div class="map-container" id="map-container">
+          <div id="map-tooltip" class="map-tooltip"></div>
+        </div>
+      </div>
+
+      <div class="chart-panel" id="status-panel">
+        <div class="panel-header">
+          <h2 data-i18n="chart.statusCodes">ステータスコード</h2>
+        </div>
+        <div class="chart-container chart-container-doughnut">
+          <canvas id="status-chart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-panel" id="topip-panel">
+        <div class="panel-header">
+          <h2 data-i18n="chart.topIps">Top 10 IP</h2>
+        </div>
+        <div class="chart-container">
+          <canvas id="topip-chart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section id="alerts-panel">
+      <div class="section-header">
+        <h2 data-i18n="alerts.title">脅威アラート</h2>
+        <span class="alert-count" id="alert-count">0</span>
+      </div>
+      <div class="alerts-list" id="alerts-list"></div>
+    </section>
+
+    <section id="log-stream">
+      <div class="section-header">
+        <h2 data-i18n="log.title">ログストリーム</h2>
+        <div class="log-controls">
+          <label class="autoscroll-toggle">
+            <input type="checkbox" id="autoscroll-toggle" checked>
+            <span data-i18n="log.autoScroll">自動スクロール</span>
+          </label>
+        </div>
+      </div>
+      <div class="filter-bar" id="filter-bar">
+        <select id="filter-service" class="filter-select">
+          <option value="" data-i18n="log.allServices">全サービス</option>
+          <option value="ultrathink-app">ultrathink</option>
+          <option value="xls-converter">converter</option>
+          <option value="limai-academy">limai</option>
+          <option value="file-optimizer">optimizer</option>
+        </select>
+        <select id="filter-status" class="filter-select">
+          <option value="" data-i18n="log.allStatus">全ステータス</option>
+          <option value="2xx">2xx</option>
+          <option value="3xx">3xx</option>
+          <option value="4xx">4xx</option>
+          <option value="5xx">5xx</option>
+        </select>
+        <input type="text" id="filter-ip" class="filter-input" data-i18n-placeholder="log.filterIp" placeholder="IP検索...">
+        <input type="text" id="filter-path" class="filter-input" data-i18n-placeholder="log.filterPath" placeholder="パス検索...">
+        <button id="filter-clear" class="filter-clear-btn" data-i18n="log.clear">クリア</button>
+      </div>
+      <div class="log-table-wrapper" id="log-table-wrapper">
+        <table class="log-table" id="log-table">
+          <thead>
+            <tr>
+              <th data-i18n="table.time">時刻</th>
+              <th data-i18n="table.status">ステータス</th>
+              <th data-i18n="table.method">メソッド</th>
+              <th data-i18n="table.path">パス</th>
+              <th data-i18n="table.ip">IP</th>
+              <th data-i18n="table.country">国</th>
+              <th data-i18n="table.service">サービス</th>
+            </tr>
+          </thead>
+          <tbody id="log-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
