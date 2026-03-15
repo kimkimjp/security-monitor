@@ -70,8 +70,10 @@ app.get('/', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
+const VALID_RANGES = ['1h', '6h', '24h'];
+
 app.get('/api/summary', (req, res) => {
-  const range = req.query.range || '1h';
+  const range = VALID_RANGES.includes(req.query.range) ? req.query.range : '1h';
   const raw = store.getSummary(range);
   res.json({
     ...raw,
@@ -84,7 +86,7 @@ app.get('/api/summary', (req, res) => {
 });
 
 app.get('/api/timeline', (req, res) => {
-  const range = req.query.range || '1h';
+  const range = VALID_RANGES.includes(req.query.range) ? req.query.range : '1h';
   const raw = store.getTimeline(range);
   res.json(raw.map(d => ({
     time: d.timestamp,
