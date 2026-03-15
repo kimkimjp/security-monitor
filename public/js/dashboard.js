@@ -11,6 +11,20 @@
   const MAX_ALERTS = 50;
   const TOAST_DURATION = 5000;
 
+  // ---- Base Path Detection ----
+  // Auto-detect base path for reverse proxy support (e.g., /monitor/)
+  // Uses the directory of the current HTML page as the base
+  const BASE_PATH = (function () {
+    var p = window.location.pathname;
+    // Ensure trailing slash
+    if (!p.endsWith('/')) p = p.substring(0, p.lastIndexOf('/') + 1);
+    return p;
+  })();
+
+  function apiUrl(path) {
+    return BASE_PATH + path.replace(/^\//, '');
+  }
+
   // ---- i18n shortcut ----
   function t(key) { return window.i18n ? window.i18n.t(key) : key; }
 
@@ -103,7 +117,7 @@
 
   function connectSSE() {
     if (eventSource) { try { eventSource.close(); } catch(_){} }
-    eventSource = new EventSource('/api/events');
+    eventSource = new EventSource(apiUrl('api/events'));
 
     eventSource.onopen = function () {
       const dot = document.getElementById('status-dot');
@@ -888,7 +902,7 @@
   // ---- Initial Data Load ----
 
   function loadServiceConfig() {
-    return fetch('/api/config/services')
+    return fetch(apiUrl('api/config/services'))
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (cfg) {
         if (!cfg || !cfg.services) return;
@@ -915,11 +929,11 @@
 
   function loadInitialData() {
     const fetches = [
-      fetch('/api/summary').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
-      fetch('/api/timeline?range=1h').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
-      fetch('/api/top/ips').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
-      fetch('/api/alerts').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
-      fetch('/api/countries').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+      fetch(apiUrl('api/summary')).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+      fetch(apiUrl('api/timeline?range=1h')).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+      fetch(apiUrl('api/top/ips')).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+      fetch(apiUrl('api/alerts')).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+      fetch(apiUrl('api/countries')).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
     ];
 
     Promise.all(fetches).then(function (results) {
